@@ -1,0 +1,81 @@
+// bintray plugin is used to upload artifacts to a bintray repo
+plugins { id "com.jfrog.bintray" version "1.6" }
+
+apply plugin: 'java'
+apply plugin: 'application'
+
+group = 'com.lwouis.hashcode'
+version = '1.0'
+description = 'Library to run Google HashCode solution code on parallel threads'
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '3.1'
+}
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile 'com.google.guava:guava:20.0'
+}
+
+mainClassName = 'com.lwouis.hashcode.Main'
+
+task srcZip(type: Zip, dependsOn: tasks.build) {
+    classifier = 'src'
+    from sourceSets*.allSource
+    destinationDir file("$rootDir/outputs/")}
+
+task generateOutputs ( type: JavaExec, dependsOn: tasks.build ) {
+    args("inputs/*")
+    description = "Hashcode output generation"
+    main = project.mainClassName
+    classpath = sourceSets.main.runtimeClasspath
+}
+
+task submit (dependsOn: [tasks.srcZip, tasks.generateOutputs]) {
+}
+tasks.generateOutputs.mustRunAfter(tasks.srcZip)
+
+def getPropOrEnv = { String prop, String envVar, String defaultValue = null ->
+    if (project.hasProperty(prop)) {
+        return project.property(prop)
+    }
+    return System.getenv(envVar) ?: defaultValue
+}
+
+ext {
+    githubUser = getPropOrEnv('githubUser', 'GITHUB_USER')
+    githubRepoName = project.name
+    githubSlug = "$githubUser/$githubRepoName"
+    githubRepoUrl = "https://github.com/$githubSlug"
+}
+
+bintray {
+    user = getPropOrEnv('bintrayUser', 'BINTRAY_USER')
+    key = getPropOrEnv('bintrayApiKey', 'BINTRAY_KEY')
+    publications = ['maven']
+    publish = true // the version should be auto published after an upload
+
+    pkg {
+        repo = getPropOrEnv('bintrayRepoLibs', 'BINTRAY_REPO_LIBS')
+        name = project.name
+        desc = project.description
+        labels = project.labels
+        licenses = ['MIT']
+
+        websiteUrl = githubRepoUrl
+        issueTrackerUrl = githubRepoUrl + '/issues'
+        vcsUrl = githubRepoUrl + '.git'
+        githubRepo = githubSlug
+
+        version {
+            desc = project.description
+            vcsTag = 'v' + project.version
+            gpg { sign = true }
+        }
+    }
+}
