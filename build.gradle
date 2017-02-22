@@ -7,6 +7,7 @@ apply plugin: 'application'
 group = 'com.lwouis.hashcode'
 version = '1.0'
 description = 'Library to run Google HashCode solution code on parallel threads'
+ext.labels = ['hashcode']
 
 task wrapper(type: Wrapper) {
     gradleVersion = '3.1'

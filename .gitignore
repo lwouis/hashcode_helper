@@ -1,1 +1,10 @@
 /outputs/
+
+# IntelliJ
+.idea/
+*.ipr
+*.iws
+
+# Gradle
+.gradle/
+build/
